@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MCTI Protocol - 意识同步评估</title>
+    <style>
+        :root {
+            --bg-color: #0d0d0f;
+            --primary-gold: #c9a063;
+            --accent-blue: #4facfe;
+            --text-color: #e0e0e0;
+            --amis-purple: #b19cd9;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            font-family: 'PingFang SC', 'Microsoft YaHei', sans-serif;
+            margin: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            overflow: hidden;
+        }
+
+        #quiz-container {
+            width: 90%;
+            max-width: 550px;
+            background: rgba(20, 20, 25, 0.95);
+            border: 1px solid rgba(201, 160, 99, 0.2);
+            padding: 40px;
+            box-shadow: 0 0 40px rgba(0,0,0,0.8);
+            position: relative;
+        }
+
+        h2 {
+            color: var(--primary-gold);
+            font-size: 1rem;
+            letter-spacing: 3px;
+            text-align: center;
+            border-bottom: 1px solid rgba(201, 160, 99, 0.3);
+            padding-bottom: 15px;
+            margin-bottom: 30px;
+        }
+
+        .progress-bar {
+            height: 2px;
+            background: #222;
+            margin-bottom: 30px;
+        }
+
+        #progress-fill {
+            height: 100%;
+            background: var(--accent-blue);
+            width: 0%;
+            transition: width 0.4s;
+        }
+
+        .question-text {
+            font-size: 1.1rem;
+            line-height: 1.6;
+            margin-bottom: 40px;
+            min-height: 80px;
+        }
+
+        .options-container {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .option-btn {
+            background: transparent;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: var(--text-color);
+            padding: 18px;
+            cursor: pointer;
+            transition: all 0.3s;
+            text-align: left;
+            font-size: 0.95rem;
+        }
+
+        .option-btn:hover {
+            border-color: var(--primary-gold);
+            background: rgba(201, 160, 99, 0.05);
+        }
+
+        #result-container {
+            display: none;
+            text-align: center;
+        }
+
+        .result-role {
+            font-size: 1.8rem;
+            color: var(--primary-gold);
+            margin: 20px 0;
+        }
+
+        .amis-style {
+            color: var(--amis-purple) !important;
+            text-shadow: 0 0 15px rgba(177, 156, 217, 0.6);
+        }
+
+        .last-words {
+            font-style: italic;
+            margin-top: 50px;
+            color: #777;
+            font-size: 0.85rem;
+            line-height: 1.8;
+        }
+
+        /* 故障闪烁效果 */
+        .glitch { animation: glitch-anim 0.3s linear; }
+        @keyframes glitch-anim {
+            0% { opacity: 1; transform: translate(0); }
+            20% { opacity: 0.8; transform: translate(-3px, 2px); }
+            40% { opacity: 0.9; transform: translate(3px, -2px); }
+            100% { opacity: 1; transform: translate(0); }
+        }
+    </style>
+</head>
+<body>
+
+<div id="quiz-container">
+    <h2 id="header-title">MCTI PROTOCOL // 意识同步中</h2>
+    <div class="progress-bar"><div id="progress-fill"></div></div>
+    
+    <div id="qa-section">
+        <div class="question-text" id="question">正在初始化系统...</div>
+        <div class="options-container" id="options"></div>
+    </div>
+
+    <div id="result-container">
+        <p style="font-size: 0.9rem; color: #888;">同步完成。匹配频率：</p>
+        <div class="result-role" id="role-name"></div>
+        <div id="role-desc" style="line-height: 1.6; color: #bbb;"></div>
+        <div class="last-words" id="amis-knife"></div>
+    </div>
+</div>
+
+<script>
+    const questions = [
+        { q: "你在荒原醒来，手中握着一颗发光的晶体。", a: "握紧它，它是唯一的线索", b: "观察它，分析危险性", k: false },
+        { q: "秧秧想带你去吃今州的美食，你会选择？", a: "热闹的攀花餐馆", b: "安静的角落吃便当", k: false },
+        { q: "战斗中，你的队友因为失误陷入重围。", a: "拼命冲进去救人", b: "远程火力掩护，寻找时机", k: false },
+        { q: "面对忌炎的严苛训练，你的看法是？", a: "为了保护重要的人", b: "为了掌握自己的命运", k: false },
+        { q: "你在黑海岸捡到一个破损的玩偶，你会？", a: "把它修好，它可能属于某个女孩", b: "放在原地，不干涉过往", k: true },
+        { q: "银霖邀请你玩一场博弈，赌注是你的记忆。", a: "拒绝，记忆更重要", b: "接受，自信能赢", k: false },
+        { q: "如果世界是一场循环，你愿意打破它吗？", a: "愿意，即使未来不可知", b: "不愿意，已知的痛苦好过未知的绝望", k: true },
+        { q: "长离对你微笑时，你觉得那笑容背后是？", a: "温柔的关怀", b: "层层的布局", k: false },
+        { q: "发现一段数据正被删除，删除它能救更多人。", a: "犹豫，数据中可能有灵魂", b: "快速执行，为了大局", k: true },
+        { q: "在无音区，你听到了微弱的求救声。", a: "即使是陷阱也要去看看", b: "优先确保自身安全", k: false },
+        { q: "你最喜欢的探索方式是？", a: "跑酷翻越山岭", b: "慢慢行走观察", k: false },
+        { q: "有个声音问：“如果我消失了，你会记得我多久？”", a: "直到我生命的终点", b: "直到世界不再需要这段记忆", k: true },
+        { q: "面对椿的“疯狂”，你的评价是？", a: "纯粹的生命力", b: "不可控因素", k: false },
+       
